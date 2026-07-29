@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import Stripe from "stripe";
 
 export async function POST(request: Request) {
@@ -24,22 +24,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
       const customerId = session.customer as string;
       const subscriptionId = session.subscription as string;
+      const orgId =
+        session.client_reference_id || session.metadata?.org_id;
 
-      // Update organization with Stripe customer ID
+      if (!orgId) {
+        console.error("No org_id in checkout session");
+        break;
+      }
+
+      const plan = session.metadata?.plan || "starter";
+
       await supabase
         .from("organizations")
         .update({
           stripe_customer_id: customerId,
-          plan: "starter", // Default after checkout
+          stripe_subscription_id: subscriptionId,
+          plan,
         })
-        .eq("stripe_customer_id", customerId);
+        .eq("id", orgId);
 
       break;
     }
@@ -48,8 +57,7 @@ export async function POST(request: Request) {
       const subscription = event.data.object as Stripe.Subscription;
       const priceId = subscription.items.data[0]?.price.id;
 
-      // Determine plan from price ID
-      let plan: string = "free";
+      let plan = "free";
       if (priceId === process.env.STRIPE_STARTER_PRICE_ID) {
         plan = "starter";
       } else if (priceId === process.env.STRIPE_PRO_PRICE_ID) {
@@ -58,19 +66,25 @@ export async function POST(request: Request) {
 
       await supabase
         .from("organizations")
-        .update({ plan })
+        .update({
+          plan,
+          stripe_subscription_id: subscription.id,
+        })
         .eq("stripe_customer_id", subscription.customer);
 
       break;
     }
 
     case "customer.subscription.deleted": {
-      const subscription = event.data.object as Stripe.Subscription;
+      const deletedSub = event.data.object as Stripe.Subscription;
 
       await supabase
         .from("organizations")
-        .update({ plan: "free" })
-        .eq("stripe_customer_id", subscription.customer);
+        .update({
+          plan: "free",
+          stripe_subscription_id: null,
+        })
+        .eq("stripe_customer_id", deletedSub.customer);
 
       break;
     }

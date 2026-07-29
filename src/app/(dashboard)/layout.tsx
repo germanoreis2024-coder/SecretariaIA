@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -29,6 +30,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import type { Profile } from "@/types";
+
+const planBadge: Record<string, string> = {
+  free: "bg-gray-100 text-gray-700",
+  starter: "bg-violet-100 text-violet-700",
+  pro: "bg-amber-100 text-amber-700",
+};
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -171,6 +178,8 @@ export default function DashboardLayout({
 }
 
 function SidebarNav({ pathname }: { pathname: string }) {
+  const { org } = useOrg();
+
   return (
     <nav className="flex flex-col gap-1">
       {navigation.map((item) => {
@@ -190,6 +199,19 @@ function SidebarNav({ pathname }: { pathname: string }) {
           </Link>
         );
       })}
+
+      <Separator className="my-2" />
+
+      <div className="px-3 py-2">
+        <p className="text-xs text-muted-foreground mb-1">
+          {org?.name || "Carregando..."}
+        </p>
+        {org?.plan && (
+          <Badge className={planBadge[org.plan] || planBadge.free}>
+            {org.plan.charAt(0).toUpperCase() + org.plan.slice(1)}
+          </Badge>
+        )}
+      </div>
     </nav>
   );
 }

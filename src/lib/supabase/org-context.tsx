@@ -54,6 +54,8 @@ export function OrgProvider({ children }: { children: ReactNode }) {
         plan: orgRaw.plan as Organization["plan"],
         plan_expires_at: orgRaw.plan_expires_at as string | null,
         stripe_customer_id: orgRaw.stripe_customer_id as string | null,
+        stripe_subscription_id: orgRaw.stripe_subscription_id as string | null,
+        subscription_status: orgRaw.subscription_status as string | null,
         created_at: orgRaw.created_at as string,
       });
     }

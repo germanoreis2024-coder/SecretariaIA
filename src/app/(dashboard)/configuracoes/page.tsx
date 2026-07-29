@@ -2,19 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useOrg } from "@/lib/supabase/org-context";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { User, Building2, CreditCard, LogOut } from "lucide-react";
-import type { Profile, Organization } from "@/types";
+import { User, CreditCard, Building2, LogOut } from "lucide-react";
 
 export default function ConfiguracoesPage() {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [organization, setOrganization] = useState<Organization | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { org, loading: orgLoading } = useOrg();
   const [saving, setSaving] = useState(false);
   const [fullName, setFullName] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -29,42 +26,27 @@ export default function ConfiguracoesPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data } = await supabase
+    const { data: profile } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", user.id)
       .single();
 
-    if (data) {
-      setProfile(data);
-      setFullName(data.full_name || "");
-      setCompanyName(data.company_name || "");
+    if (profile) {
+      setFullName(profile.full_name || "");
+      setCompanyName(profile.company_name || "");
     }
-
-    const { data: member } = await supabase
-      .from("org_members")
-      .select("org_id")
-      .eq("user_id", user.id)
-      .single();
-
-    if (member) {
-      const { data: org } = await supabase
-        .from("organizations")
-        .select("*")
-        .eq("id", member.org_id)
-        .single();
-      setOrganization(org);
-    }
-
-    setLoading(false);
   }
 
   async function saveProfile() {
     setSaving(true);
-    await supabase
-      .from("profiles")
-      .update({ full_name: fullName, company_name: companyName })
-      .eq("id", profile?.id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase
+        .from("profiles")
+        .update({ full_name: fullName, company_name: companyName })
+        .eq("id", user.id);
+    }
     setSaving(false);
   }
 
@@ -77,9 +59,7 @@ export default function ConfiguracoesPage() {
     <div className="space-y-6 max-w-2xl">
       <div>
         <h1 className="text-2xl font-bold">Configurações</h1>
-        <p className="text-muted-foreground">
-          Gerencie seu perfil e preferências
-        </p>
+        <p className="text-muted-foreground">Gerencie seu perfil e preferências</p>
       </div>
 
       <Card>
@@ -92,21 +72,36 @@ export default function ConfiguracoesPage() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Nome completo</Label>
-            <Input
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-            />
+            <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
           </div>
           <div className="space-y-2">
             <Label>Empresa</Label>
-            <Input
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-            />
+            <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
           </div>
           <Button onClick={saveProfile} disabled={saving}>
             {saving ? "Salvando..." : "Salvar"}
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="h-5 w-5" />
+            Organização
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {orgLoading ? (
+            <p className="text-sm text-muted-foreground">Carregando...</p>
+          ) : (
+            <div className="space-y-2">
+              <p className="font-medium">{org?.name || "—"}</p>
+              <p className="text-sm text-muted-foreground">
+                Slug: {org?.slug || "—"}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -120,12 +115,10 @@ export default function ConfiguracoesPage() {
         <CardContent>
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium capitalize">{organization?.plan || "free"}</p>
-              <p className="text-sm text-muted-foreground">
-                Seu plano atual
-              </p>
+              <p className="font-medium capitalize">{org?.plan || "free"}</p>
+              <p className="text-sm text-muted-foreground">Seu plano atual</p>
             </div>
-            <Button variant="outline">Upgrade</Button>
+            <Button variant="outline" disabled>Aguardando Stripe</Button>
           </div>
         </CardContent>
       </Card>
@@ -138,9 +131,7 @@ export default function ConfiguracoesPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Button variant="destructive" onClick={handleLogout}>
-            Sair
-          </Button>
+          <Button variant="destructive" onClick={handleLogout}>Sair</Button>
         </CardContent>
       </Card>
     </div>

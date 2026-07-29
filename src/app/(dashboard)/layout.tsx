@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { OrgProvider, useOrg } from "@/lib/supabase/org-context";
 import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
@@ -85,6 +86,7 @@ export default function DashboardLayout({
     : "??";
 
   return (
+    <OrgProvider>
     <div className="min-h-screen bg-muted/30">
       {/* Mobile sidebar */}
       {sidebarOpen && (
@@ -164,6 +166,7 @@ export default function DashboardLayout({
         <main className="p-6">{children}</main>
       </div>
     </div>
+    </OrgProvider>
   );
 }
 

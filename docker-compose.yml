@@ -1,0 +1,66 @@
+services:
+  mongodb:
+    image: mongo:7
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: evolution_pass
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: evolution_pass
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --requirepass evolution_pass
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+
+  evolution:
+    image: atendai/evolution-api:v2.2.0
+    restart: always
+    depends_on:
+      - mongodb
+      - rabbitmq
+      - redis
+    environment:
+      SERVER_URL: http://localhost:8080
+      SERVER_PORT: 8080
+      AUTHENTICATION_API_KEY: evolution_api_key_change_me
+      AUTHENTICATION_EXPOSE_INSTANCE_FETCHES: "true"
+      AUTHENTICATION_TYPE: apikey
+      DATABASE_ENABLED: "true"
+      DATABASE_CONNECTION_URI: mongodb://admin:evolution_pass@mongodb:27017/evolution?authSource=admin
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_MESSAGE: "true"
+      DATABASE_SAVE_DATA_CONTACTS: "true"
+      DATABASE_SAVE_DATA_CHATS: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
+      RABBITMQ_ENABLED: "true"
+      RABBITMQ_URI: amqp://admin:evolution_pass@rabbitmq:5672
+      REDIS_ENABLED: "true"
+      REDIS_URI: redis://:evolution_pass@redis:6379
+      LOG_LEVEL: info
+      DEL_INSTANCE: "true"
+    ports:
+      - "8080:8080"
+
+volumes:
+  mongodb_data:
+  rabbitmq_data:
+  redis_data:

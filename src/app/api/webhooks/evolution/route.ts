@@ -1,22 +1,21 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { sendTextMessage } from "@/lib/evolution";
+import {
+  sendTextMessage,
+  markRead,
+  sendPresence,
+} from "@/lib/evolution";
+import { generateResponse, analyzeSentiment } from "@/lib/gemini";
 
 interface EvolutionWebhookBody {
   event: string;
   instance: string;
   data: {
-    key: {
-      remoteJid: string;
-      fromMe: boolean;
-      id: string;
-    };
+    key: { remoteJid: string; fromMe: boolean; id: string };
     pushName?: string;
     message?: {
       conversation?: string;
-      extendedTextMessage?: {
-        text?: string;
-      };
+      extendedTextMessage?: { text?: string };
     };
   };
 }
@@ -26,7 +25,6 @@ export async function POST(request: Request) {
     const body: EvolutionWebhookBody = await request.json();
     const { event, instance, data } = body;
 
-    // Only process incoming text messages
     if (event !== "messages.upsert" || data.key.fromMe) {
       return NextResponse.json({ ok: true });
     }
@@ -42,7 +40,6 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
 
-    // Find the channel by evolution instance ID
     const { data: channel } = await supabase
       .from("channels")
       .select("*, organizations(*)")
@@ -50,7 +47,6 @@ export async function POST(request: Request) {
       .single();
 
     if (!channel) {
-      console.error(`Channel not found for instance: ${instance}`);
       return NextResponse.json({ ok: true });
     }
 
@@ -58,7 +54,6 @@ export async function POST(request: Request) {
     const contactPhone = data.key.remoteJid.replace("@s.whatsapp.net", "");
     const contactName = data.pushName || contactPhone;
 
-    // Find or create conversation
     let { data: conversation } = await supabase
       .from("conversations")
       .select("id, agent_id")
@@ -69,7 +64,6 @@ export async function POST(request: Request) {
       .single();
 
     if (!conversation) {
-      // Get the default agent for this channel
       const { data: agent } = await supabase
         .from("agents")
         .select("id")
@@ -97,14 +91,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    // Save incoming message
     await supabase.from("messages").insert({
       conversation_id: conversation.id,
       role: "user",
       content: messageText,
     });
 
-    // If there's an agent, generate AI response
+    await markRead(instance, data.key.remoteJid, data.key.id);
+    await sendPresence(instance, data.key.remoteJid, "composing");
+
     if (conversation.agent_id) {
       const { data: agent } = await supabase
         .from("agents")
@@ -113,15 +108,66 @@ export async function POST(request: Request) {
         .single();
 
       if (agent) {
-        // TODO: Call the Gemini API here and send response via Evolution
-        // For now, send a placeholder response
-        await sendTextMessage({
-          instance,
-          to: contactPhone,
-          text: "Obrigado por sua mensagem! Em breve um atendente irá responder.",
+        const { data: shortcuts } = await supabase
+          .from("shortcuts")
+          .select("trigger, response")
+          .eq("org_id", orgId)
+          .eq("is_active", true);
+
+        const triggerMatch = shortcuts?.find((s) =>
+          messageText.toLowerCase().includes(s.trigger.toLowerCase())
+        );
+
+        let responseText: string;
+
+        if (triggerMatch) {
+          responseText = triggerMatch.response;
+        } else {
+          const { data: trainingMessages } = await supabase
+            .from("training_messages")
+            .select("role, content")
+            .eq("agent_id", agent.id)
+            .order("created_at", { ascending: true });
+
+          const { data: historyMessages } = await supabase
+            .from("messages")
+            .select("role, content")
+            .eq("conversation_id", conversation.id)
+            .order("created_at", { ascending: true })
+            .limit(20);
+
+          const startTime = Date.now();
+          responseText = await generateResponse(
+            agent.system_prompt ||
+              "Você é um atendente virtual prestativo e simpático.",
+            trainingMessages || [],
+            historyMessages || [],
+            messageText,
+            {
+              model: agent.model,
+              temperature: agent.temperature,
+              maxTokens: agent.max_tokens,
+            }
+          );
+        }
+
+        await supabase.from("messages").insert({
+          conversation_id: conversation.id,
+          role: "assistant",
+          content: responseText,
+          model: agent.model,
         });
+
+        await sendTextMessage(instance, contactPhone, responseText);
       }
     }
+
+    const sentiment = await analyzeSentiment(messageText);
+
+    await supabase
+      .from("conversations")
+      .update({ sentiment, updated_at: new Date().toISOString() })
+      .eq("id", conversation.id);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

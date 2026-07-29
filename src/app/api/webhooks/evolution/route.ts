@@ -136,7 +136,6 @@ export async function POST(request: Request) {
             .order("created_at", { ascending: true })
             .limit(20);
 
-          const startTime = Date.now();
           responseText = await generateResponse(
             agent.system_prompt ||
               "Você é um atendente virtual prestativo e simpático.",
@@ -149,16 +148,22 @@ export async function POST(request: Request) {
               maxTokens: agent.max_tokens,
             }
           );
+
+          if (!responseText && agent.fallback_message) {
+            responseText = agent.fallback_message;
+          }
         }
 
-        await supabase.from("messages").insert({
-          conversation_id: conversation.id,
-          role: "assistant",
-          content: responseText,
-          model: agent.model,
-        });
+        if (responseText) {
+          await supabase.from("messages").insert({
+            conversation_id: conversation.id,
+            role: "assistant",
+            content: responseText,
+            model: agent.model,
+          });
 
-        await sendTextMessage(instance, contactPhone, responseText);
+          await sendTextMessage(instance, contactPhone, responseText);
+        }
       }
     }
 

@@ -41,7 +41,7 @@ services:
     environment:
       SERVER_URL: http://localhost:8080
       SERVER_PORT: 8080
-      AUTHENTICATION_API_KEY: evolution_api_key_change_me
+      AUTHENTICATION_API_KEY: 2896AC54-1DF5-4175-A9C1-5B0EA3AE5698
       AUTHENTICATION_EXPOSE_INSTANCE_FETCHES: "true"
       AUTHENTICATION_TYPE: apikey
       DATABASE_ENABLED: "true"

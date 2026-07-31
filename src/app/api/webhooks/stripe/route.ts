@@ -47,6 +47,7 @@ export async function POST(request: Request) {
           stripe_customer_id: customerId,
           stripe_subscription_id: subscriptionId,
           plan,
+          subscription_status: "active",
         })
         .eq("id", orgId);
 
@@ -69,6 +70,11 @@ export async function POST(request: Request) {
         .update({
           plan,
           stripe_subscription_id: subscription.id,
+          subscription_status:
+            subscription.status === "active" ||
+            subscription.status === "trialing"
+              ? "active"
+              : "inactive",
         })
         .eq("stripe_customer_id", subscription.customer);
 
@@ -83,6 +89,7 @@ export async function POST(request: Request) {
         .update({
           plan: "free",
           stripe_subscription_id: null,
+          subscription_status: "inactive",
         })
         .eq("stripe_customer_id", deletedSub.customer);
 

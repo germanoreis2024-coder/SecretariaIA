@@ -141,7 +141,7 @@ export default function LandingPage() {
               },
               {
                 name: "Starter",
-                price: "R$ 97",
+                price: "R$ 57",
                 period: "/mês",
                 features: [
                   "1.000 mensagens/mês",
@@ -155,7 +155,7 @@ export default function LandingPage() {
               },
               {
                 name: "Pro",
-                price: "R$ 297",
+                price: "R$ 157",
                 period: "/mês",
                 features: [
                   "Mensagens ilimitadas",

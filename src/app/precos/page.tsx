@@ -27,7 +27,7 @@ const plans = [
   {
     id: "starter" as const,
     name: "Starter",
-    price: "R$ 97",
+    price: "R$ 57",
     period: "/mês",
     description: "Para pequenos negócios",
     features: [
@@ -43,7 +43,7 @@ const plans = [
   {
     id: "pro" as const,
     name: "Pro",
-    price: "R$ 297",
+    price: "R$ 157",
     period: "/mês",
     description: "Para empresas",
     features: [

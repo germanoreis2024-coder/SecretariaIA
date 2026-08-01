@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, CreditCard, Building2, LogOut, ExternalLink, Loader2, CheckCircle2 } from "lucide-react";
+import { User, CreditCard, Building2, LogOut, ExternalLink, Loader2, CheckCircle2, KeyRound, Save } from "lucide-react";
 
 const planLabels: Record<string, { label: string; color: string }> = {
   free: { label: "Free", color: "bg-gray-100 text-gray-700" },
@@ -25,11 +25,16 @@ function ConfiguracoesContent() {
   const [fullName, setFullName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [success, setSuccess] = useState(searchParams.get("success") === "true");
+  const [geminiApiKey, setGeminiApiKey] = useState("");
+  const [evolutionApiUrl, setEvolutionApiUrl] = useState("");
+  const [evolutionApiKey, setEvolutionApiKey] = useState("");
+  const [settingsSaved, setSettingsSaved] = useState(false);
   const supabase = createClient();
   const router = useRouter();
 
   useEffect(() => {
     loadProfile();
+    loadSettings();
   }, []);
 
   useEffect(() => {
@@ -37,6 +42,36 @@ function ConfiguracoesContent() {
       setTimeout(() => setSuccess(false), 5000);
     }
   }, [success]);
+
+  useEffect(() => {
+    if (settingsSaved) {
+      setTimeout(() => setSettingsSaved(false), 3000);
+    }
+  }, [settingsSaved]);
+
+  async function loadSettings() {
+    const res = await fetch("/api/settings");
+    if (!res.ok) return;
+    const data = await res.json();
+    setGeminiApiKey(data.settings?.gemini_api_key || "");
+    setEvolutionApiUrl(data.settings?.evolution_api_url || "");
+    setEvolutionApiKey(data.settings?.evolution_api_key || "");
+  }
+
+  async function saveSettings() {
+    setSaving(true);
+    const res = await fetch("/api/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        gemini_api_key: geminiApiKey,
+        evolution_api_url: evolutionApiUrl,
+        evolution_api_key: evolutionApiKey,
+      }),
+    });
+    setSaving(false);
+    if (res.ok) setSettingsSaved(true);
+  }
 
   async function loadProfile() {
     const { data: { user } } = await supabase.auth.getUser();
@@ -138,6 +173,67 @@ function ConfiguracoesContent() {
               </p>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <KeyRound className="h-5 w-5" />
+            Credenciais da Organização
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Configure as chaves usadas pelo seu WhatsApp e IA. Se vazio, usa as
+            do ambiente (padrão da plataforma).
+          </p>
+
+          <div className="space-y-2">
+            <Label>Chave Gemini (IA)</Label>
+            <Input
+              type="password"
+              placeholder="Deixe vazio para usar a chave padrão"
+              value={geminiApiKey}
+              onChange={(e) => setGeminiApiKey(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>URL da Evolution API</Label>
+            <Input
+              placeholder="http://localhost:8080"
+              value={evolutionApiUrl}
+              onChange={(e) => setEvolutionApiUrl(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Chave da Evolution API</Label>
+            <Input
+              type="password"
+              placeholder="Deixe vazio para usar a chave padrão"
+              value={evolutionApiKey}
+              onChange={(e) => setEvolutionApiKey(e.target.value)}
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button onClick={saveSettings} disabled={saving}>
+              {saving ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Salvar Credenciais
+            </Button>
+            {settingsSaved && (
+              <span className="text-sm text-green-600 flex items-center gap-1">
+                <CheckCircle2 className="h-4 w-4" />
+                Salvas!
+              </span>
+            )}
+          </div>
         </CardContent>
       </Card>
 

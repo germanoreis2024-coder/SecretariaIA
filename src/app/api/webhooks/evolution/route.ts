@@ -4,8 +4,10 @@ import {
   sendTextMessage,
   markRead,
   sendPresence,
+  type EvolutionConfig,
 } from "@/lib/evolution";
 import { generateResponse, analyzeSentiment } from "@/lib/gemini";
+import { getOrgSettings } from "@/lib/settings";
 
 interface EvolutionWebhookBody {
   event: string;
@@ -54,6 +56,13 @@ export async function POST(request: Request) {
     const contactPhone = data.key.remoteJid.replace("@s.whatsapp.net", "");
     const contactName = data.pushName || contactPhone;
 
+    const settings = await getOrgSettings(supabase, orgId);
+    const evolutionConfig: EvolutionConfig = {
+      apiUrl: settings.evolution_api_url,
+      apiKey: settings.evolution_api_key,
+    };
+    const geminiKey = settings.gemini_api_key || undefined;
+
     let { data: conversation } = await supabase
       .from("conversations")
       .select("id, agent_id")
@@ -97,8 +106,8 @@ export async function POST(request: Request) {
       content: messageText,
     });
 
-    await markRead(instance, data.key.remoteJid, data.key.id);
-    await sendPresence(instance, data.key.remoteJid, "composing");
+    await markRead(instance, data.key.remoteJid, data.key.id, evolutionConfig);
+    await sendPresence(instance, data.key.remoteJid, "composing", evolutionConfig);
 
     if (conversation.agent_id) {
       const { data: agent } = await supabase
@@ -146,6 +155,7 @@ export async function POST(request: Request) {
               model: agent.model,
               temperature: agent.temperature,
               maxTokens: agent.max_tokens,
+              apiKey: geminiKey,
             }
           );
 
@@ -162,12 +172,12 @@ export async function POST(request: Request) {
             model: agent.model,
           });
 
-          await sendTextMessage(instance, contactPhone, responseText);
+          await sendTextMessage(instance, contactPhone, responseText, evolutionConfig);
         }
       }
     }
 
-    const sentiment = await analyzeSentiment(messageText);
+    const sentiment = await analyzeSentiment(messageText, geminiKey);
 
     await supabase
       .from("conversations")

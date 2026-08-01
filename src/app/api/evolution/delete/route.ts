@@ -1,8 +1,19 @@
 import { NextResponse } from "next/server";
 import { deleteInstance } from "@/lib/evolution";
+import { createClient } from "@/lib/supabase/server";
+import { getOrgEvolutionConfig, getUserOrgId } from "@/lib/settings";
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const { user, orgId } = await getUserOrgId(supabase);
+
+    if (!user || !orgId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const evolutionConfig = await getOrgEvolutionConfig(supabase, orgId);
+
     const body = await request.json();
     const { instanceName } = body;
 
@@ -13,7 +24,7 @@ export async function POST(request: Request) {
       );
     }
 
-    await deleteInstance(instanceName);
+    await deleteInstance(instanceName, evolutionConfig);
 
     return NextResponse.json({ ok: true });
   } catch (error: any) {

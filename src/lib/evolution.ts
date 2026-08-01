@@ -1,20 +1,31 @@
-const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || "http://localhost:8080";
-const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || "";
+const DEFAULT_EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || "http://localhost:8080";
+const DEFAULT_EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || "";
 
-function getHeaders(): Record<string, string> {
+export interface EvolutionConfig {
+  apiUrl?: string;
+  apiKey?: string;
+}
+
+function getHeaders(apiKey: string): Record<string, string> {
   return {
     "Content-Type": "application/json",
-    apikey: EVOLUTION_API_KEY,
+    apikey: apiKey,
   };
 }
 
-function apiUrl(path: string): string {
-  return `${EVOLUTION_API_URL}${path}`;
+function apiUrl(config: EvolutionConfig, path: string): string {
+  const base = config.apiUrl || DEFAULT_EVOLUTION_API_URL;
+  return `${base}${path}`;
 }
 
-async function apiCall<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(apiUrl(path), {
-    headers: getHeaders(),
+async function apiCall<T>(
+  path: string,
+  config: EvolutionConfig,
+  options?: RequestInit
+): Promise<T> {
+  const key = config.apiKey || DEFAULT_EVOLUTION_API_KEY;
+  const response = await fetch(apiUrl(config, path), {
+    headers: getHeaders(key),
     ...options,
   });
   if (!response.ok) {
@@ -38,8 +49,8 @@ export interface CreateInstanceParams {
   };
 }
 
-export async function createInstance(params: CreateInstanceParams) {
-  return apiCall("/instance/create", {
+export async function createInstance(params: CreateInstanceParams, config: EvolutionConfig = {}) {
+  return apiCall("/instance/create", config, {
     method: "POST",
     body: JSON.stringify({
       instanceName: params.instanceName,
@@ -52,24 +63,24 @@ export async function createInstance(params: CreateInstanceParams) {
   });
 }
 
-export async function fetchInstances() {
-  return apiCall("/instance/fetchInstances");
+export async function fetchInstances(config: EvolutionConfig = {}) {
+  return apiCall("/instance/fetchInstances", config);
 }
 
-export async function getInstanceStatus(instance: string) {
-  return apiCall(`/instance/connectionState/${instance}`);
+export async function getInstanceStatus(instance: string, config: EvolutionConfig = {}) {
+  return apiCall(`/instance/connectionState/${instance}`, config);
 }
 
-export async function getQRCode(instance: string) {
-  return apiCall(`/instance/connect/${instance}`);
+export async function getQRCode(instance: string, config: EvolutionConfig = {}) {
+  return apiCall(`/instance/connect/${instance}`, config);
 }
 
-export async function disconnectInstance(instance: string) {
-  return apiCall(`/instance/logout/${instance}`, { method: "DELETE" });
+export async function disconnectInstance(instance: string, config: EvolutionConfig = {}) {
+  return apiCall(`/instance/logout/${instance}`, config, { method: "DELETE" });
 }
 
-export async function deleteInstance(instance: string) {
-  return apiCall(`/instance/delete/${instance}`, { method: "DELETE" });
+export async function deleteInstance(instance: string, config: EvolutionConfig = {}) {
+  return apiCall(`/instance/delete/${instance}`, config, { method: "DELETE" });
 }
 
 // --- Webhook Management ---
@@ -79,15 +90,15 @@ export interface WebhookConfig {
   events: string[];
 }
 
-export async function setWebhook(instance: string, config: WebhookConfig) {
-  return apiCall(`/webhook/set/${instance}`, {
+export async function setWebhook(instance: string, config: EvolutionConfig, webhook: WebhookConfig) {
+  return apiCall(`/webhook/set/${instance}`, config, {
     method: "POST",
-    body: JSON.stringify(config),
+    body: JSON.stringify(webhook),
   });
 }
 
-export async function getWebhook(instance: string) {
-  return apiCall(`/webhook/find/${instance}`);
+export async function getWebhook(instance: string, config: EvolutionConfig = {}) {
+  return apiCall(`/webhook/find/${instance}`, config);
 }
 
 // --- Messaging ---
@@ -98,8 +109,8 @@ export interface SendTextResponse {
   status: string;
 }
 
-export async function sendTextMessage(instance: string, to: string, text: string): Promise<SendTextResponse> {
-  return apiCall(`/message/sendText/${instance}`, {
+export async function sendTextMessage(instance: string, to: string, text: string, config: EvolutionConfig = {}): Promise<SendTextResponse> {
+  return apiCall(`/message/sendText/${instance}`, config, {
     method: "POST",
     body: JSON.stringify({ number: to, text, delay: 1000 }),
   });
@@ -109,9 +120,10 @@ export async function sendTextReply(
   instance: string,
   to: string,
   text: string,
-  replyToMessageId: string
+  replyToMessageId: string,
+  config: EvolutionConfig = {}
 ) {
-  return apiCall(`/message/sendText/${instance}`, {
+  return apiCall(`/message/sendText/${instance}`, config, {
     method: "POST",
     body: JSON.stringify({
       number: to,
@@ -122,8 +134,8 @@ export async function sendTextReply(
   });
 }
 
-export async function markRead(instance: string, remoteJid: string, messageId: string) {
-  return apiCall(`/message/sendRead/${instance}`, {
+export async function markRead(instance: string, remoteJid: string, messageId: string, config: EvolutionConfig = {}) {
+  return apiCall(`/message/sendRead/${instance}`, config, {
     method: "POST",
     body: JSON.stringify({
       remoteJid,
@@ -133,8 +145,8 @@ export async function markRead(instance: string, remoteJid: string, messageId: s
   });
 }
 
-export async function sendPresence(instance: string, remoteJid: string, presence: "composing" | "recording" | "paused") {
-  return apiCall(`/chat/sendPresence/${instance}`, {
+export async function sendPresence(instance: string, remoteJid: string, presence: "composing" | "recording" | "paused", config: EvolutionConfig = {}) {
+  return apiCall(`/chat/sendPresence/${instance}`, config, {
     method: "POST",
     body: JSON.stringify({ remoteJid, presence }),
   });

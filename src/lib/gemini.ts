@@ -1,12 +1,16 @@
 import { GoogleGenAI } from "@google/genai";
 
 let _genai: GoogleGenAI | null = null;
+let _genaiKey: string | undefined;
 
-function getGenAI(): GoogleGenAI {
-  if (!_genai) {
-    _genai = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY!,
-    });
+function getGenAI(apiKey?: string): GoogleGenAI {
+  const key = apiKey || process.env.GEMINI_API_KEY;
+  if (!key) {
+    throw new Error("GEMINI_API_KEY não configurada. Defina no .env.local ou nas configurações.");
+  }
+  if (!_genai || _genaiKey !== key) {
+    _genai = new GoogleGenAI({ apiKey: key });
+    _genaiKey = key;
   }
   return _genai;
 }
@@ -24,6 +28,7 @@ export async function generateResponse(
     model?: string;
     temperature?: number;
     maxTokens?: number;
+    apiKey?: string;
   }
 ) {
   const model = options?.model || "gemini-2.0-flash";
@@ -51,7 +56,7 @@ export async function generateResponse(
     parts: textPart(userMessage),
   });
 
-  const response = await getGenAI().models.generateContent({
+  const response = await getGenAI(options?.apiKey).models.generateContent({
     model,
     contents,
     config: {
@@ -64,8 +69,11 @@ export async function generateResponse(
   return response.text ?? "";
 }
 
-export async function analyzeSentiment(text: string): Promise<"positive" | "neutral" | "negative"> {
-  const response = await getGenAI().models.generateContent({
+export async function analyzeSentiment(
+  text: string,
+  apiKey?: string
+): Promise<"positive" | "neutral" | "negative"> {
+  const response = await getGenAI(apiKey).models.generateContent({
     model: "gemini-2.0-flash",
     contents: [{ role: "user", parts: textPart(`Analise o sentimento desta mensagem e responda APENAS com uma palavra: "positive", "neutral" ou "negative".\n\nMensagem: "${text}"`) }],
     config: {

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Organization, OrgMember } from "@/types";
 
@@ -24,7 +24,7 @@ export function OrgProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
-  async function loadOrg() {
+  const loadOrg = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       setLoading(false);
@@ -68,11 +68,12 @@ export function OrgProvider({ children }: { children: ReactNode }) {
       }
     }
     setLoading(false);
-  }
+  }, [supabase]);
 
   useEffect(() => {
     loadOrg();
-  }, []);
+  }, [loadOrg]);
+
 
   return (
     <OrgContext.Provider value={{ org, member, loading, refresh: loadOrg }}>

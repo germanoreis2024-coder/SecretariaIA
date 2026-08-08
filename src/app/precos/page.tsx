@@ -99,7 +99,7 @@ export default function PrecosPage() {
     setLoading(null);
 
     if (data.url) {
-      window.location.href = data.url;
+      window.location.assign(data.url);
     }
   }
 

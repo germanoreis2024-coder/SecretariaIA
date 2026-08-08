@@ -23,11 +23,7 @@ export default function MensagensPage() {
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
-  useEffect(() => {
-    loadConversations();
-  }, []);
-
-  async function loadConversations() {
+  const loadConversations = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       setLoading(false);
@@ -54,7 +50,12 @@ export default function MensagensPage() {
 
     setConversations((data as unknown as Conversation[]) || []);
     setLoading(false);
-  }
+  };
+
+  useEffect(() => {
+    loadConversations();
+  }, []);
+
 
   const statusColor: Record<string, string> = {
     open: "bg-green-100 text-green-700",

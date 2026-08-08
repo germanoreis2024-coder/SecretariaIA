@@ -33,7 +33,7 @@ export function OrgProvider({ children }: { children: ReactNode }) {
 
     const { data: memberData } = await supabase
       .from("org_members")
-      .select("*, organizations(*)")
+      .select("*")
       .eq("user_id", user.id)
       .single();
 
@@ -45,19 +45,27 @@ export function OrgProvider({ children }: { children: ReactNode }) {
         role: memberData.role,
         created_at: memberData.created_at,
       });
-      const orgRaw = memberData.organizations as Record<string, unknown>;
-      setOrg({
-        id: orgRaw.id as string,
-        name: orgRaw.name as string,
-        slug: orgRaw.slug as string,
-        owner_id: orgRaw.owner_id as string | null,
-        plan: orgRaw.plan as Organization["plan"],
-        plan_expires_at: orgRaw.plan_expires_at as string | null,
-        stripe_customer_id: orgRaw.stripe_customer_id as string | null,
-        stripe_subscription_id: orgRaw.stripe_subscription_id as string | null,
-        subscription_status: orgRaw.subscription_status as string | null,
-        created_at: orgRaw.created_at as string,
-      });
+
+      const { data: orgRaw } = await supabase
+        .from("organizations")
+        .select("*")
+        .eq("id", memberData.org_id)
+        .single();
+
+      if (orgRaw) {
+        setOrg({
+          id: orgRaw.id as string,
+          name: orgRaw.name as string,
+          slug: orgRaw.slug as string,
+          owner_id: orgRaw.owner_id as string | null,
+          plan: orgRaw.plan as Organization["plan"],
+          plan_expires_at: orgRaw.plan_expires_at as string | null,
+          stripe_customer_id: orgRaw.stripe_customer_id as string | null,
+          stripe_subscription_id: orgRaw.stripe_subscription_id as string | null,
+          subscription_status: orgRaw.subscription_status as string | null,
+          created_at: orgRaw.created_at as string,
+        });
+      }
     }
     setLoading(false);
   }

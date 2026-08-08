@@ -93,7 +93,15 @@ export interface WebhookConfig {
 export async function setWebhook(instance: string, config: EvolutionConfig, webhook: WebhookConfig) {
   return apiCall(`/webhook/set/${instance}`, config, {
     method: "POST",
-    body: JSON.stringify(webhook),
+    body: JSON.stringify({
+      webhook: {
+        enabled: true,
+        url: webhook.url,
+        webhookByEvents: false,
+        webhookBase64: false,
+        events: webhook.events,
+      },
+    }),
   });
 }
 
@@ -135,12 +143,10 @@ export async function sendTextReply(
 }
 
 export async function markRead(instance: string, remoteJid: string, messageId: string, config: EvolutionConfig = {}) {
-  return apiCall(`/message/sendRead/${instance}`, config, {
+  return apiCall(`/chat/markMessageAsRead/${instance}`, config, {
     method: "POST",
     body: JSON.stringify({
-      remoteJid,
-      id: messageId,
-      fromMe: false,
+      readMessages: [{ remoteJid, id: messageId, fromMe: false }],
     }),
   });
 }
@@ -148,6 +154,10 @@ export async function markRead(instance: string, remoteJid: string, messageId: s
 export async function sendPresence(instance: string, remoteJid: string, presence: "composing" | "recording" | "paused", config: EvolutionConfig = {}) {
   return apiCall(`/chat/sendPresence/${instance}`, config, {
     method: "POST",
-    body: JSON.stringify({ remoteJid, presence }),
+    body: JSON.stringify({
+      number: remoteJid,
+      presence,
+      delay: 0,
+    }),
   });
 }

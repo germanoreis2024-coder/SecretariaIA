@@ -1,14 +1,15 @@
 services:
-  mongodb:
-    image: mongo:7
+  postgres:
+    image: postgres:16
     restart: always
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: evolution_pass
+      POSTGRES_DB: evolution
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: evolution_pass
     volumes:
-      - mongodb_data:/data/db
+      - postgres_data:/var/lib/postgresql/data
     ports:
-      - "27017:27017"
+      - "5432:5432"
 
   rabbitmq:
     image: rabbitmq:3.13-management
@@ -32,10 +33,10 @@ services:
       - "6379:6379"
 
   evolution:
-    image: atendai/evolution-api:v2.2.0
+    image: evoapicloud/evolution-api:v2.3.0
     restart: always
     depends_on:
-      - mongodb
+      - postgres
       - rabbitmq
       - redis
     environment:
@@ -45,7 +46,8 @@ services:
       AUTHENTICATION_EXPOSE_INSTANCE_FETCHES: "true"
       AUTHENTICATION_TYPE: apikey
       DATABASE_ENABLED: "true"
-      DATABASE_CONNECTION_URI: mongodb://admin:evolution_pass@mongodb:27017/evolution?authSource=admin
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://admin:evolution_pass@postgres:5432/evolution?schema=public
       DATABASE_SAVE_DATA_INSTANCE: "true"
       DATABASE_SAVE_DATA_MESSAGE: "true"
       DATABASE_SAVE_DATA_CONTACTS: "true"
@@ -54,13 +56,13 @@ services:
       RABBITMQ_ENABLED: "true"
       RABBITMQ_URI: amqp://admin:evolution_pass@rabbitmq:5672
       REDIS_ENABLED: "true"
-      REDIS_URI: redis://:evolution_pass@redis:6379
+      CACHE_REDIS_URI: redis://:evolution_pass@redis:6379
       LOG_LEVEL: info
       DEL_INSTANCE: "true"
     ports:
       - "8080:8080"
 
 volumes:
-  mongodb_data:
+  postgres_data:
   rabbitmq_data:
   redis_data:

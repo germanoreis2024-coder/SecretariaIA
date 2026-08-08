@@ -31,7 +31,7 @@ export async function generateResponse(
     apiKey?: string;
   }
 ) {
-  const model = options?.model || "gemini-2.0-flash";
+  const model = options?.model || "gemini-flash-latest";
   const temperature = options?.temperature ?? 0.7;
   const maxTokens = options?.maxTokens ?? 1000;
 
@@ -74,7 +74,7 @@ export async function analyzeSentiment(
   apiKey?: string
 ): Promise<"positive" | "neutral" | "negative"> {
   const response = await getGenAI(apiKey).models.generateContent({
-    model: "gemini-2.0-flash",
+    model: "gemini-flash-lite-latest",
     contents: [{ role: "user", parts: textPart(`Analise o sentimento desta mensagem e responda APENAS com uma palavra: "positive", "neutral" ou "negative".\n\nMensagem: "${text}"`) }],
     config: {
       temperature: 0,

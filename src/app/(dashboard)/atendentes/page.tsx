@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -37,15 +37,15 @@ interface AgentWithChannel extends Agent {
 }
 
 const MODELS = [
-  { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash (Rápido)" },
-  { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash (Balanceado)" },
-  { id: "gemini-2.0-pro", name: "Gemini 2.0 Pro (Máxima qualidade)" },
+  { id: "gemini-flash-latest", name: "Gemini Flash (RÃ¡pido)" },
+  { id: "gemini-3.5-flash-lite", name: "Gemini 3.5 Flash Lite (EconÃ´mico)" },
+  { id: "gemini-3-pro-preview", name: "Gemini 3 Pro Preview (MÃ¡xima qualidade)" },
 ];
 
-const defaultPrompt = `Você é um atendente virtual prestativo e simpático.
-Sempre responda em português brasileiro de forma clara e educada.
-Use as informações do treinamento para responder com precisão.
-Se não souber responder, peça desculpas e ofereça ajuda humana.`;
+const defaultPrompt = `VocÃª Ã© um atendente virtual prestativo e simpÃ¡tico.
+Sempre responda em portuguÃªs brasileiro de forma clara e educada.
+Use as informaÃ§Ãµes do treinamento para responder com precisÃ£o.
+Se nÃ£o souber responder, peÃ§a desculpas e ofereÃ§a ajuda humana.`;
 
 export default function AtendentesPage() {
   const router = useRouter();
@@ -60,7 +60,7 @@ export default function AtendentesPage() {
     description: "",
     personality: "",
     system_prompt: defaultPrompt,
-    model: "gemini-2.0-flash",
+    model: "gemini-flash-latest",
     temperature: 0.7,
     max_tokens: 1000,
     channel_id: "",
@@ -96,7 +96,7 @@ export default function AtendentesPage() {
       description: "",
       personality: "",
       system_prompt: defaultPrompt,
-      model: "gemini-2.0-flash",
+      model: "gemini-flash-latest",
       temperature: 0.7,
       max_tokens: 1000,
       channel_id: "",
@@ -190,7 +190,7 @@ export default function AtendentesPage() {
             <Bot className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
             <p className="text-lg font-medium mb-1">Nenhum atendente criado</p>
             <p className="text-sm text-muted-foreground mb-4">
-              Crie seu primeiro atendente IA para começar a automatizar
+              Crie seu primeiro atendente IA para comeÃ§ar a automatizar
             </p>
             <Button onClick={openCreate}>Criar Atendente</Button>
           </CardContent>
@@ -217,7 +217,7 @@ export default function AtendentesPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                  {agent.description || "Sem descrição"}
+                  {agent.description || "Sem descriÃ§Ã£o"}
                 </p>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
                   <span>Temp: {agent.temperature}</span>
@@ -286,9 +286,9 @@ export default function AtendentesPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Descrição</Label>
+              <Label>DescriÃ§Ã£o</Label>
               <Input
-                placeholder="Breve descrição do atendente"
+                placeholder="Breve descriÃ§Ã£o do atendente"
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
               />
@@ -297,7 +297,7 @@ export default function AtendentesPage() {
             <div className="space-y-2">
               <Label>Personalidade</Label>
               <Input
-                placeholder="Ex: Simpática, profissional, usa linguagem formal"
+                placeholder="Ex: SimpÃ¡tica, profissional, usa linguagem formal"
                 value={form.personality}
                 onChange={(e) => setForm({ ...form, personality: e.target.value })}
               />
@@ -381,7 +381,7 @@ export default function AtendentesPage() {
               <Label>Prompt de Sistema</Label>
               <textarea
                 className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
-                placeholder="Instruções detalhadas para o atendente..."
+                placeholder="InstruÃ§Ãµes detalhadas para o atendente..."
                 value={form.system_prompt}
                 onChange={(e) =>
                   setForm({ ...form, system_prompt: e.target.value })
@@ -390,10 +390,10 @@ export default function AtendentesPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Mensagem de Fallback (quando não souber responder)</Label>
+              <Label>Mensagem de Fallback (quando nÃ£o souber responder)</Label>
               <textarea
                 className="w-full min-h-[60px] rounded-md border border-input bg-background px-3 py-2 text-sm"
-                placeholder="Desculpe, não entendi. Vou transferir para um atendente humano."
+                placeholder="Desculpe, nÃ£o entendi. Vou transferir para um atendente humano."
                 value={form.fallback_message}
                 onChange={(e) =>
                   setForm({ ...form, fallback_message: e.target.value })
@@ -402,7 +402,7 @@ export default function AtendentesPage() {
             </div>
 
             <Button onClick={saveAgent} className="w-full">
-              {editingAgent ? "Salvar Alterações" : "Criar Atendente"}
+              {editingAgent ? "Salvar AlteraÃ§Ãµes" : "Criar Atendente"}
             </Button>
           </div>
         </DialogContent>
@@ -414,7 +414,7 @@ export default function AtendentesPage() {
             <DialogTitle>Excluir Atendente</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Tem certeza? O treinamento associado também será removido.
+            Tem certeza? O treinamento associado tambÃ©m serÃ¡ removido.
           </p>
           <div className="flex gap-2 justify-end mt-4">
             <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
@@ -432,3 +432,4 @@ export default function AtendentesPage() {
     </div>
   );
 }
+

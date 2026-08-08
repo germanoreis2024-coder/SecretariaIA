@@ -47,8 +47,9 @@ export default function IntegracoesPage() {
   const orgId = org?.id;
 
   useEffect(() => {
+    if (!orgId) return;
     loadChannels();
-  }, []);
+  }, [orgId]);
 
   useEffect(() => {
     if (!pollInstance) return;
@@ -92,44 +93,73 @@ export default function IntegracoesPage() {
   }
 
   async function createChannel() {
-    if (!orgId) return;
+    try {
+      if (!orgId) {
+        alert("Organização ainda não carregada. Tente novamente em instantes.");
+        return;
+      }
+      if (!newChannel.name.trim()) {
+        alert("Digite um nome para o canal.");
+        return;
+      }
 
-    const instanceName = `atendeia_${orgId.slice(0, 8)}_${Date.now().toString(36)}`;
-    const webhookUrl = `${window.location.origin}/api/webhooks/evolution`;
+      setConnecting("novo");
+      setQrCode(null);
 
-    const res = await fetch("/api/evolution/connect", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        instanceName,
-        webhookUrl,
-      }),
-    });
+      const instanceName = `atendeia_${orgId.slice(0, 8)}_${Date.now().toString(36)}`;
+      const webhookBase = process.env.NEXT_PUBLIC_WEBHOOK_BASE_URL || window.location.origin;
+      const webhookUrl = `${webhookBase}/api/webhooks/evolution`;
 
-    if (!res.ok) {
-      alert("Erro ao conectar Evolution API. Verifique se o servidor está rodando.");
-      return;
+      const res = await fetch("/api/evolution/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          instanceName,
+          webhookUrl,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.text();
+        console.error("connect error", res.status, body);
+        alert(`Erro ao conectar Evolution API (${res.status}). ${body.slice(0, 200)}`);
+        setConnecting(null);
+        return;
+      }
+
+      const data = await res.json();
+
+      const { error: insertError } = await supabase.from("channels").insert({
+        org_id: orgId,
+        name: newChannel.name,
+        phone_number: newChannel.phone_number || null,
+        evolution_instance_id: instanceName,
+        is_active: false,
+      });
+
+      if (insertError) {
+        console.error("insert channel error", insertError);
+        alert(`Erro ao salvar canal: ${insertError.message}`);
+        setConnecting(null);
+        return;
+      }
+
+      if (data.qrcode?.code) {
+        setQrCode(data.qrcode.code);
+        setPollInstance(instanceName);
+      } else {
+        alert("Canal criado, mas o QR code não está disponível ainda. Aguarde e use o botão Conectar.");
+      }
+
+      setDialogOpen(false);
+      setNewChannel({ name: "", phone_number: "" });
+      setConnecting(null);
+      loadChannels();
+    } catch (e: any) {
+      console.error("createChannel exception", e);
+      alert(`Erro inesperado: ${e?.message || e}`);
+      setConnecting(null);
     }
-
-    const data = await res.json();
-
-    await supabase.from("channels").insert({
-      org_id: orgId,
-      name: newChannel.name,
-      phone_number: newChannel.phone_number || null,
-      evolution_instance_id: instanceName,
-      is_active: false,
-    });
-
-    if (data.qrcode?.code) {
-      setQrCode(data.qrcode.code);
-      setPollInstance(instanceName);
-      setConnecting(instanceName);
-    }
-
-    setDialogOpen(false);
-    setNewChannel({ name: "", phone_number: "" });
-    loadChannels();
   }
 
   async function connectExisting(instanceName: string, channelId: string) {
@@ -229,7 +259,7 @@ export default function IntegracoesPage() {
               <Button
                 onClick={createChannel}
                 className="w-full"
-                disabled={!newChannel.name || connecting !== null}
+                disabled={connecting !== null}
               >
                 {connecting ? (
                   <>

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   sendTextMessage,
   markRead,
@@ -31,6 +31,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
+    const remoteJid = data.key.remoteJid;
+    if (remoteJid.includes("@g.us") || remoteJid.includes("@broadcast") || remoteJid.endsWith("@lid")) {
+      return NextResponse.json({ ok: true });
+    }
+
     const messageText =
       data.message?.conversation ||
       data.message?.extendedTextMessage?.text ||
@@ -40,7 +45,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { data: channel } = await supabase
       .from("channels")
@@ -106,8 +111,17 @@ export async function POST(request: Request) {
       content: messageText,
     });
 
-    await markRead(instance, data.key.remoteJid, data.key.id, evolutionConfig);
-    await sendPresence(instance, data.key.remoteJid, "composing", evolutionConfig);
+    try {
+      await markRead(instance, data.key.remoteJid, data.key.id, evolutionConfig);
+    } catch (e) {
+      console.error("markRead error:", e);
+    }
+
+    try {
+      await sendPresence(instance, data.key.remoteJid, "composing", evolutionConfig);
+    } catch (e) {
+      console.error("sendPresence error:", e);
+    }
 
     if (conversation.agent_id) {
       const { data: agent } = await supabase

@@ -32,9 +32,9 @@ import { Separator } from "@/components/ui/separator";
 import type { Profile } from "@/types";
 
 const planBadge: Record<string, string> = {
-  free: "bg-gray-100 text-gray-700",
-  starter: "bg-violet-100 text-violet-700",
-  pro: "bg-amber-100 text-amber-700",
+  free: "border border-white/10 bg-white/5 text-slate-300",
+  starter: "border border-violet-500/40 bg-violet-500/10 text-violet-300",
+  pro: "border border-amber-500/40 bg-amber-500/10 text-amber-300",
 };
 
 const navigation = [
@@ -94,21 +94,23 @@ export default function DashboardLayout({
 
   return (
     <OrgProvider>
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-[#090d16] text-slate-100">
       {/* Mobile sidebar */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div
-            className="fixed inset-0 bg-black/50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setSidebarOpen(false)}
           />
-          <div className="fixed inset-y-0 left-0 w-64 bg-card border-r">
+          <div className="fixed inset-y-0 left-0 w-64 border-r border-white/10 bg-[#0a0f1e]">
             <div className="flex items-center justify-between p-4">
-              <Link href="/dashboard" className="text-xl font-bold flex items-center gap-2">
-                <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center text-white text-sm">
-                  🤖
+              <Link href="/dashboard" className="flex items-center gap-2.5">
+                <div className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-500 shadow-lg shadow-violet-600/30">
+                  <Bot className="h-4.5 w-4.5 text-white" />
                 </div>
-                AtendeIA
+                <span className="text-xl font-bold tracking-tight">
+                  Atende<span className="gradient-text">IA</span>
+                </span>
               </Link>
               <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>
                 <X className="h-5 w-5" />
@@ -121,12 +123,14 @@ export default function DashboardLayout({
 
       {/* Desktop sidebar */}
       <aside className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex grow flex-col gap-y-6 overflow-y-auto border-r bg-card px-6 py-4">
-          <Link href="/dashboard" className="text-xl font-bold flex items-center gap-2">
-            <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center text-white text-sm">
-              🤖
+        <div className="flex grow flex-col gap-y-6 overflow-y-auto border-r border-white/10 bg-[#0a0f1e] px-6 py-4">
+          <Link href="/dashboard" className="flex items-center gap-2.5">
+            <div className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-500 shadow-lg shadow-violet-600/30">
+              <Bot className="h-4.5 w-4.5 text-white" />
             </div>
-            AtendeIA
+            <span className="text-xl font-bold tracking-tight">
+              Atende<span className="gradient-text">IA</span>
+            </span>
           </Link>
           <SidebarNav pathname={pathname} />
         </div>
@@ -135,11 +139,11 @@ export default function DashboardLayout({
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top bar */}
-        <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-card px-6">
+        <header className="glass-nav sticky top-0 z-40 flex h-16 items-center gap-4 px-6">
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden"
+            className="lg:hidden text-slate-300 hover:bg-white/5 hover:text-white"
             onClick={() => setSidebarOpen(true)}
           >
             <Menu className="h-5 w-5" />
@@ -148,14 +152,14 @@ export default function DashboardLayout({
           <DropdownMenu>
             <DropdownMenuTrigger render={<Button variant="ghost" className="relative h-9 w-9 rounded-full" />}>
                 <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-violet-100 text-violet-700 text-sm font-medium">
+                  <AvatarFallback className="bg-gradient-to-br from-violet-600 to-fuchsia-600 text-sm font-medium text-white">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <div className="flex items-center gap-2 p-2">
-                <p className="text-sm font-medium">{profile?.full_name || "Usuário"}</p>
+                <p className="text-sm font-medium text-slate-200">{profile?.full_name || "Usuário"}</p>
               </div>
               <Separator />
               <DropdownMenuItem render={<Link href="/configuracoes" className="cursor-pointer" />}>
@@ -188,10 +192,10 @@ function SidebarNav({ pathname }: { pathname: string }) {
           <Link
             key={item.href}
             href={item.href}
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            className={`flex items-center gap-3 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-all ${
               isActive
-                ? "bg-violet-50 text-violet-700"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "border-violet-500 bg-gradient-to-r from-violet-600/20 to-fuchsia-600/20 text-violet-300"
+                : "border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200"
             }`}
           >
             <item.icon className="h-4 w-4" />
@@ -200,10 +204,10 @@ function SidebarNav({ pathname }: { pathname: string }) {
         );
       })}
 
-      <Separator className="my-2" />
+      <Separator className="my-2 bg-white/10" />
 
       <div className="px-3 py-2">
-        <p className="text-xs text-muted-foreground mb-1">
+        <p className="text-xs text-slate-500 mb-1">
           {org?.name || "Carregando..."}
         </p>
         {org?.plan && (

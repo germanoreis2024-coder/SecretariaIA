@@ -1,3 +1,4 @@
+import { Logo } from "@/components/ui/logo";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { WhatsAppSimulator } from "@/components/landing/whatsapp-simulator";
@@ -106,15 +107,7 @@ export default function LandingPage() {
       {/* Header flutuante */}
       <header className="glass-nav sticky top-0 z-50">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/" className="group flex items-center gap-2.5">
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-500 shadow-lg shadow-violet-600/30 transition-shadow group-hover:shadow-violet-500/50">
-              <Bot className="h-5 w-5 text-white" />
-              <span className="absolute inset-0 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 opacity-0 blur-md transition-opacity group-hover:opacity-60" />
-            </div>
-            <span className="text-xl font-bold tracking-tight">
-              Atende<span className="gradient-text">IA</span>
-            </span>
-          </Link>
+          <Logo />
           <div className="flex items-center gap-4">
             <Link href="/login">
               <Button

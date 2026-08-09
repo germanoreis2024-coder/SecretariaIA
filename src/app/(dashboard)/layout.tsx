@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Logo } from "@/components/ui/logo";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { OrgProvider, useOrg } from "@/lib/supabase/org-context";
@@ -104,14 +105,7 @@ export default function DashboardLayout({
           />
           <div className="fixed inset-y-0 left-0 w-64 border-r border-white/10 bg-[#0a0f1e]">
             <div className="flex items-center justify-between p-4">
-              <Link href="/dashboard" className="flex items-center gap-2.5">
-                <div className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-500 shadow-lg shadow-violet-600/30">
-                  <Bot className="h-4.5 w-4.5 text-white" />
-                </div>
-                <span className="text-xl font-bold tracking-tight">
-                  Atende<span className="gradient-text">IA</span>
-                </span>
-              </Link>
+              <Logo size="sm" />
               <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>
                 <X className="h-5 w-5" />
               </Button>
@@ -124,14 +118,7 @@ export default function DashboardLayout({
       {/* Desktop sidebar */}
       <aside className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex grow flex-col gap-y-6 overflow-y-auto border-r border-white/10 bg-[#0a0f1e] px-6 py-4">
-          <Link href="/dashboard" className="flex items-center gap-2.5">
-            <div className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-500 shadow-lg shadow-violet-600/30">
-              <Bot className="h-4.5 w-4.5 text-white" />
-            </div>
-            <span className="text-xl font-bold tracking-tight">
-              Atende<span className="gradient-text">IA</span>
-            </span>
-          </Link>
+          <Logo size="sm" />
           <SidebarNav pathname={pathname} />
         </div>
       </aside>
